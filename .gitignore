@@ -1,0 +1,22 @@
+# PlatformIO
+.pio
+.pioenvs
+.piolibdeps
+/platformio.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arduino
+build/
+libraries/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+HT_DS_Datasheet_SHT4x_5.pdf

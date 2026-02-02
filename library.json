@@ -1,0 +1,22 @@
+{
+  "name": "SHT40_DS28E18",
+  "version": "1.0.0",
+  "description": "Library for SHT40 sensor connected via DS28E18 1-Wire to I2C bridge",
+  "keywords": "SHT40, DS28E18, 1-Wire, I2C, sensor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DanielSart/SHT40_DS28E18.git"
+  },
+  "authors": [
+    {
+      "name": "Daniel Sart",
+      "maintainer": true
+    }
+  ],
+  "dependencies": {
+    "DS28E18_DS2482_Library": "https://github.com/DanielSart/DS28E18_DS2482_Library.git",
+    "adafruit/Adafruit DS248x": "^1.0.1"
+  },
+  "frameworks": "arduino",
+  "platforms": "*"
+}
