@@ -14,74 +14,94 @@ SHT40_DS28E18 sht40_1(oneWireBus, 1);
 long lastTime;
 long elapsedTime;
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
-  while (!Serial) delay(10);
+  while (!Serial)
+    delay(10);
 
-  //oneWireBus.enableDebug();
+  // oneWireBus.enableDebug();
 
   Serial.println("--- DS28E18 + Dual SHT40 Example ---");
 
-  if (!ds2482.begin(&Wire, DS248X_ADDRESS)) {
+  if (!ds2482.begin(&Wire, DS248X_ADDRESS))
+  {
     Serial.println("DS2482 not found!");
-    while (1);
+    while (1)
+      ;
   }
   Serial.println("DS2482 initialized.");
 
-  while (!ds2482.OneWireReset()) {
+  while (!ds2482.OneWireReset())
+  {
     Serial.println("Failed to do a 1W reset");
-    if (ds2482.shortDetected()) {
+    if (ds2482.shortDetected())
+    {
       Serial.println("\tShort detected");
     }
-    if (!ds2482.presencePulseDetected()) {
+    if (!ds2482.presencePulseDetected())
+    {
       Serial.println("\tNo presense pulse");
     }
     delay(1000);
   }
 
-  if (!oneWireBus.begin()) {
+  if (!oneWireBus.begin())
+  {
     Serial.println("OneWire Bus Init Failed");
-    while(1);
+    while (1)
+      ;
   }
 
-  if (!oneWireBus.initializeROMs()) {
+  if (!oneWireBus.initializeROMs())
+  {
     Serial.println("OneWire ROM Init Failed");
-    while(1);
+    while (1)
+      ;
   }
 
-  for(int i = 0; i < NUMBER_OF_DS28E18; i++){
+  for (int i = 0; i < NUMBER_OF_DS28E18; i++)
+  {
     uint8_t rom[8];
     Serial.print(i);
     Serial.print(": ");
-    if (ds2482.OneWireSearch(rom)) {
-      for (int j = 0; j < 8; j++) {
-        if (rom[j] < 16) {
+    if (ds2482.OneWireSearch(rom))
+    {
+      for (int j = 0; j < 8; j++)
+      {
+        if (rom[j] < 16)
+        {
           Serial.print("0");
         }
         Serial.print(rom[j], HEX);
         Serial.print(" ");
       }
-    } else {
+    }
+    else
+    {
       Serial.print("No Device found!");
     }
     oneWireBus.addDevice(rom);
     Serial.println();
   }
 
-  //oneWireBus.enableOverdrive();
+  // oneWireBus.enableOverdrive();
 
-  if (!oneWireBus.resetAllDeviceStatus()) {
+  if (!oneWireBus.resetAllDeviceStatus())
+  {
     Serial.println("Reset Device Status failed");
   }
 
   Serial.println("System Ready. Resetting SHT40...");
-  
+
   lastTime = millis();
 
-  if(!sht40_0.resetDevice()) {
+  if (!sht40_0.resetDevice())
+  {
     Serial.println("SHT40 Soft Reset Failed");
   }
-  if(!sht40_1.resetDevice()) {
+  if (!sht40_1.resetDevice())
+  {
     Serial.println("SHT40 Soft Reset Failed");
   }
   delay(10);
@@ -103,13 +123,15 @@ void setup() {
   Serial.println();
 }
 
-void loop() {
+void loop()
+{
   // --- Step 1: Trigger Measurement ---
-  
+
   lastTime = millis();
 
-  if (sht40_0.startMeasurement()) {
-    
+  if (sht40_0.startMeasurement())
+  {
+
     // SHT40 High Precision takes approx 10ms
     // We wait 20ms to be safe.
     // Note: This is Arduino delay, not sequencer delay.
@@ -118,25 +140,29 @@ void loop() {
     // --- Step 2: Read Data ---
     float temp = 0.0;
     float hum = 0.0;
-    
-    if (sht40_0.readMeasurement(temp, hum)) {
+
+    if (sht40_0.readMeasurement(temp, hum))
+    {
       Serial.println("Sensor 0: ");
       Serial.print("Temp: ");
       Serial.print(temp);
       Serial.print(" C \t Humidity: ");
       Serial.print(hum);
       Serial.println(" %");
-    } else {
+    }
+    else
+    {
       Serial.println("Read Failed (CRC or NACK)");
     }
-    
-  } else {
+  }
+  else
+  {
     Serial.println("Start Measurement Failed");
   }
 
+  if (sht40_1.startMeasurement())
+  {
 
-  if (sht40_1.startMeasurement()) {
-    
     // SHT40 High Precision takes approx 10ms
     // We wait 20ms to be safe.
     // Note: This is Arduino delay, not sequencer delay.
@@ -145,19 +171,23 @@ void loop() {
     // --- Step 2: Read Data ---
     float temp = 0.0;
     float hum = 0.0;
-    
-    if (sht40_1.readMeasurement(temp, hum)) {
+
+    if (sht40_1.readMeasurement(temp, hum))
+    {
       Serial.println("Sensor 1: ");
       Serial.print("Temp: ");
       Serial.print(temp);
       Serial.print(" C \t Humidity: ");
       Serial.print(hum);
       Serial.println(" %");
-    } else {
+    }
+    else
+    {
       Serial.println("Read Failed (CRC or NACK)");
     }
-    
-  } else {
+  }
+  else
+  {
     Serial.println("Start Measurement Failed");
   }
   elapsedTime = millis() - lastTime;
@@ -167,7 +197,8 @@ void loop() {
 
   Serial.println();
 
-  while(1);
-  
+  while (1)
+    ; // remove this to continuously read, or add a delay here to read periodically
+
   delay(2000);
 }

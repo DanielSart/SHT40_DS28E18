@@ -14,7 +14,7 @@
     }
   ],
   "dependencies": {
-    "DS28E18_DS2482_Library": "https://github.com/DanielSart/DS28E18_DS2482_Library.git",
+    "DS28E18_DS2482_Library": "^1.0.0",
     "adafruit/Adafruit DS248x": "^1.0.1"
   },
   "frameworks": "arduino",
