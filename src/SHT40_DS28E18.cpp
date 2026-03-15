@@ -201,6 +201,78 @@ bool SHT40_DS28E18::readMeasurement(float &temp, float &hum) {
 
     return true;
 }
+// -----------------------------------------------------------------------
+// Batch mode: addMeasurementToBatch
+// Appends a full measurement cycle to a SequencerBatch:
+//   START + WRITE(0xFD) + STOP + DELAY(20ms) + START + READ(6) + STOP
+// -----------------------------------------------------------------------
+int8_t SHT40_DS28E18::addMeasurementToBatch(SequencerBatch &batch) {
+    uint8_t cmd = SHT4x_NOHEAT_HIGHPRECISION;
+    // addI2CWriteRead: write cmd, wait 20ms, then read 6 bytes
+    return batch.addI2CWriteRead(SHT4x_DEFAULT_ADDR, &cmd, 1, 6, 20);
+}
+
+// -----------------------------------------------------------------------
+// Split Batch mode: addStartToBatch
+// Appends just the measurement trigger command (WRITE 0xFD).
+// -----------------------------------------------------------------------
+bool SHT40_DS28E18::addStartToBatch(SequencerBatch &batch) {
+    uint8_t cmd = SHT4x_NOHEAT_HIGHPRECISION;
+    return batch.addI2CWrite(SHT4x_DEFAULT_ADDR, &cmd, 1);
+}
+
+// -----------------------------------------------------------------------
+// Split Batch mode: addReadToBatch
+// Appends just the read command (READ 6 bytes).
+// -----------------------------------------------------------------------
+int8_t SHT40_DS28E18::addReadToBatch(SequencerBatch &batch) {
+    return batch.addI2CRead(SHT4x_DEFAULT_ADDR, 6);
+}
+
+// -----------------------------------------------------------------------
+// Batch mode: parseBatchMeasurement
+// Extracts temperature & humidity from a completed batch.
+// -----------------------------------------------------------------------
+bool SHT40_DS28E18::parseBatchMeasurement(const SequencerBatch &batch,
+                                           int8_t handle,
+                                           float &temp, float &hum)
+{
+    const uint8_t *rx = batch.getReadPtr(handle);
+    if (!rx) {
+        Serial.println("SHT40 batch: invalid handle or batch not executed");
+        return false;
+    }
+
+    // rx[0..1] = temp data, rx[2] = temp CRC
+    // rx[3..4] = hum data,  rx[5] = hum CRC
+    if (calculateCRC(rx, 2) != rx[2]) {
+        Serial.print("Data1: "); Serial.print(rx[0], HEX);
+        Serial.print(", Data2: "); Serial.print(rx[1], HEX);
+        Serial.print(", CRC (device): "); Serial.print(rx[2], HEX);
+        Serial.print(", CRC (calc): "); Serial.println(calculateCRC(rx, 2), HEX);
+        Serial.println("SHT40 Batch CRC Error (temp)");
+        return false;
+    }
+    if (calculateCRC(&rx[3], 2) != rx[5]) {
+        Serial.print("Data1: "); Serial.print(rx[3], HEX);
+        Serial.print(", Data2: "); Serial.print(rx[4], HEX);
+        Serial.print(", CRC (device): "); Serial.print(rx[5], HEX);
+        Serial.print(", CRC (calc): "); Serial.println(calculateCRC(&rx[3], 2), HEX);
+        Serial.println("SHT40 Batch CRC Error (hum)");
+        return false;
+    }
+
+    // Convert
+    uint16_t t_ticks = (rx[0] << 8) | rx[1];
+    temp = -45.0f + 175.0f * ((float)t_ticks / 65535.0f);
+
+    uint16_t rh_ticks = (rx[3] << 8) | rx[4];
+    hum = -6.0f + 125.0f * ((float)rh_ticks / 65535.0f);
+    if (hum > 100.0f) hum = 100.0f;
+    if (hum < 0.0f) hum = 0.0f;
+
+    return true;
+}
 
 uint8_t SHT40_DS28E18::calculateCRC(const uint8_t* data, uint8_t len) {
     uint8_t crc = 0xFF;

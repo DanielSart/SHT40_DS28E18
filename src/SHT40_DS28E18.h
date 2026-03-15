@@ -5,6 +5,7 @@
 #include "DS28E18.h"
 #include "DS28E18_Sequencer.h"
 #include "OneWireBus.h"
+#include "SequencerBatch.h"
 
 #define SHT4x_DEFAULT_ADDR 0x44 /**< SHT4x I2C Address */
 #define SHT4x_NOHEAT_HIGHPRECISION                                             \
@@ -53,6 +54,33 @@ public:
     bool readMeasurement(float &temp, float &hum);
 
     uint8_t calculateCRC(const uint8_t* data, uint8_t len);
+
+    // ---- Batch mode (SequencerBatch) ----
+
+    // Append a full measurement cycle to a batch:
+    // START + WRITE(0xFD) + STOP + DELAY(20ms) + START + READ(6) + STOP
+    // This builds a full trigger-wait-read cycle. Repeating this several times
+    // in one sequencer run is valid and is how single-device batching works.
+    // Returns a handle (>=0) for later result extraction, or -1 on error.
+    int8_t addMeasurementToBatch(SequencerBatch &batch);
+
+    // ---- Split Batch mode ----
+    // Use this only when the write and read belong to different devices/
+    // addresses that can convert in parallel. Do not use it to queue several
+    // back-to-back measurements for the same SHT40; the sensor will NACK
+    // while the previous conversion is still running.
+
+    // Appends only the measurement trigger command (WRITE 0xFD) to a batch.
+    bool addStartToBatch(SequencerBatch &batch);
+
+    // Appends only the read command (READ 6 bytes) to a batch.
+    // Returns a handle (>=0) for later result extraction, or -1 on error.
+    int8_t addReadToBatch(SequencerBatch &batch);
+
+    // Extract temperature & humidity from a completed batch using the handle.
+    // Returns true on success (CRC valid), false on CRC error or invalid handle.
+    bool parseBatchMeasurement(const SequencerBatch &batch, int8_t handle,
+                               float &temp, float &hum);
 
     // Device selection helpers (for bus mode)
     void setDeviceIndex(uint8_t index);
